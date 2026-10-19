@@ -1,23 +1,32 @@
-nombres = [] 
-especies = [] 
-duenos = [] 
-mascotas = [] 
+nombres = []
+especies = []
+duenos = []
+mascotas = []               
+registros_combinados = []   
 
-contador_total = 0
+contador_total = 0         
 
 def mostrar_menu():
-    print("\n--- VETERINARIA REGISTRO ---")
-    print("1. Registrar")
+    print("\n" + "=" * 60)
+    print("      VETERINARIA - SISTEMA DE REGISTRO")
+    print("=" * 60)
+    print("1. Registrar mascotas")
     print("2. Mostrar todos")
-    print("3. Buscar")
-    print("4. Modificar")
-    print("5. Eliminar")
-    print("6. Ordenar por (nombre)")
-    print("7. Ordenar por (especie)")
+    print("3. Buscar mascota")
+    print("4. Modificar mascota")
+    print("5. Eliminar mascota")
+    print("6. Ordenar por nombre")
+    print("7. Ordenar por especie")
     print("8. Salir")
 
 def limpiar_texto(texto):
-    return texto.strip().title()
+    texto_limpio = texto.strip().replace("-", " ")
+    return texto_limpio.title()
+
+def generar_codigo_mascota(nombre, especie, numero):
+    sub_nombre = nombre[0:3].upper()
+    sub_especie = especie[0:3].upper()
+    return f"{sub_nombre}-{sub_especie}-{numero:02d}"
 
 def agregar_a_listas(lista_n, lista_e, lista_d, nombre, especie, dueno):
     lista_n.append(nombre)
@@ -28,115 +37,210 @@ def incrementar(numero):
     numero = numero + 1
     return numero
 
+def decrementar(numero):
+    if numero > 0:
+        numero = numero - 1
+    return numero
+
 def crear_contador():
     conteo = 0
+
     def contar():
         nonlocal conteo
         conteo += 1
         return conteo
+
     return contar
+
 mi_contador = crear_contador()
 
 def registrar():
-    global contador_total 
+    global contador_total
     try:
-        cantidad = int(input("¿Cuántas mascotas registrar? "))
+        cantidad = int(input("¿Cuántas mascotas deseas registrar?: "))
+        if cantidad <= 0:
+            print("Error: La cantidad debe ser mayor a 0.")
+            return
     except ValueError:
-        print("Error: Debes escribir un número")
+        print("Error: Debes escribir un número entero válido.")
         return
-    for i in range(cantidad): 
-        print(f"\nMascota {i+1}")
-        nombre = limpiar_texto(input("Nombre: "))
-        especie = limpiar_texto(input("Especie: "))
-        dueno = limpiar_texto(input("Dueño: "))
 
-        if nombre == "" or dueno == "":
-            print("Error: Nombre y dueño obligatorios")
+    for i in range(cantidad):
+        print(f"\n--- Mascota {i + 1} de {cantidad} ---")
+        nombre = limpiar_texto(input("Nombre de la mascota: "))
+        especie = limpiar_texto(input("Especie (ej. Perro, Gato): "))
+        dueno = limpiar_texto(input("Nombre y apellido del dueño: "))
+
+        if nombre == "" or especie == "" or dueno == "":
+            print("Error: Nombre, especie y dueño son obligatorios. Registro omitido.")
         else:
             agregar_a_listas(nombres, especies, duenos, nombre, especie, dueno)
+
             mascotas.append([nombre, especie, dueno])
 
+            num_historico = mi_contador()
             contador_total = incrementar(contador_total)
-            print(f"Registrado N° {mi_contador()} - Total: {contador_total}")
+
+            codigo = generar_codigo_mascota(nombre, especie, num_historico)
+            partes_dueno = dueno.split(" ")
+            primer_nombre_dueno = partes_dueno[0]
+
+            registros_combinados.append({
+                "codigo": codigo,
+                "nombre": nombre,
+                "especie": especie,
+                "dueno": dueno,
+                "primer_nombre_dueno": primer_nombre_dueno
+            })
+
+            print(f"-> Registrado N° {num_historico} (Código: {codigo}) | "
+                  f"Primer nombre del dueño (split): {primer_nombre_dueno} | "
+                  f"Total activas: {contador_total}")
 
 def mostrar():
     if not mascotas:
-        print("No hay registros")
+        print("No hay mascotas registradas actualmente.")
         return
-    print("\n--- LISTA ---")
-    for i in range(len(mascotas)): 
-        print(f"{i}: {nombres[i].upper()} -> {especies[i]} | Dueño: {duenos[i]} | {mascotas[i]}")
+
+    print("\n--- A) LISTAS PARALELAS ---")
+    for i in range(len(nombres)):
+        print(f"[{i}] Mascota: {nombres[i].upper():10s} | Especie: {especies[i]:8s} | Dueño: {duenos[i]}")
+
+    print("\n--- B) MATRIZ BIDIMENSIONAL ---")
+    print(f"  | {'NOMBRE':12s} | {'ESPECIE':10s} | {'DUEÑO':16s} |")
+    print("  " + "-" * 47)
+    for fila in range(len(mascotas)):
+        print("  |", end="")
+        for col in range(len(mascotas[fila])):
+            anchos = [12, 10, 16]
+            print(f" {mascotas[fila][col]:{anchos[col]}s} |", end="")
+        print()
+
+    print("\n--- C) ESTRUCTURA COMBINADA ---")
+    for reg in registros_combinados:
+        print(f"  Código: {reg['codigo']} | Nombre: {reg['nombre']} | "
+              f"Especie: {reg['especie']} | Dueño: {reg['dueno']}")
 
 def buscar():
-    buscar_nombre = limpiar_texto(input("Buscar nombre: "))
+    if not mascotas:
+        print("No hay registros para buscar.")
+        return
+
+    termino = limpiar_texto(input("Ingrese el nombre o especie a buscar: "))
     encontrado = False
+
+    print(f"\nResultados de búsqueda para '{termino}':")
     for i in range(len(nombres)):
-        if nombres[i].lower().startswith(buscar_nombre.lower()):
-            print(f"Encontrado en pos {i}: {mascotas[i]}")
+        pos_nombre = nombres[i].lower().find(termino.lower())
+        pos_especie = especies[i].lower().find(termino.lower())
+
+        if pos_nombre != -1 or pos_especie != -1:
+            print(f"  - Encontrado en posición [{i}]: {registros_combinados[i]}")
             encontrado = True
+
     if not encontrado:
-        print("No encontrado")
+        print("  No se encontraron coincidencias.")
 
 def modificar():
+    if not mascotas:
+        print("No hay registros para modificar.")
+        return
+
     mostrar()
     try:
-        pos = int(input("Posición a modificar: "))
+        pos = int(input("\nPosición a modificar: "))
         if 0 <= pos < len(nombres):
-            nuevo = limpiar_texto(input("Nuevo nombre: "))
-            nombres[pos] = nuevo
-            mascotas[pos][0] = nuevo 
-            print("Modificado!")
+            nuevo_nombre = limpiar_texto(input("Nuevo nombre (Enter para mantener actual): "))
+            nueva_especie = limpiar_texto(input("Nueva especie (Enter para mantener actual): "))
+            nuevo_dueno = limpiar_texto(input("Nuevo dueño (Enter para mantener actual): "))
+
+            if nuevo_nombre != "":
+                nombres[pos] = nuevo_nombre
+                mascotas[pos][0] = nuevo_nombre
+                registros_combinados[pos]["nombre"] = nuevo_nombre
+
+            if nueva_especie != "":
+                especies[pos] = nueva_especie
+                mascotas[pos][1] = nueva_especie
+                registros_combinados[pos]["especie"] = nueva_especie
+
+            if nuevo_dueno != "":
+                duenos[pos] = nuevo_dueno
+                mascotas[pos][2] = nuevo_dueno
+                registros_combinados[pos]["dueno"] = nuevo_dueno
+                registros_combinados[pos]["primer_nombre_dueno"] = nuevo_dueno.split(" ")[0]
+
+            print("¡Registro modificado correctamente!")
         else:
-            print("Posición inválida")
+            print("Posición fuera de rango.")
     except ValueError:
-        print("Debe ser número")
+        print("Error: Debes ingresar un número entero.")
 
 def eliminar():
+    global contador_total
+    if not mascotas:
+        print("No hay registros para eliminar.")
+        return
+    
     mostrar()
     try:
-        pos = int(input("Posición a eliminar: "))
+        pos = int(input("\nPosición a eliminar: "))
         if 0 <= pos < len(nombres):
-            del nombres[pos]
-            del especies[pos]
-            del duenos[pos]
-            del mascotas[pos]
-            print("Eliminado!")
+            eliminado = nombres.pop(pos)
+            especies.pop(pos)
+            duenos.pop(pos)
+            mascotas.pop(pos)
+            registros_combinados.pop(pos)
+            contador_total = decrementar(contador_total)
+            print(f"¡Mascota '{eliminado}' eliminada! Total activas: {contador_total}")
         else:
-            print("Posición inválida")
+            print("Posición fuera de rango.")
     except ValueError:
-        print("Debe ser número")
+        print("Error: Debes ingresar un número entero.")
+
+def intercambiar_registros(i, j):
+    nombres[i], nombres[j] = nombres[j], nombres[i]
+    especies[i], especies[j] = especies[j], especies[i]
+    duenos[i], duenos[j] = duenos[j], duenos[i]
+    mascotas[i], mascotas[j] = mascotas[j], mascotas[i]
+    registros_combinados[i], registros_combinados[j] = registros_combinados[j], registros_combinados[i]
 
 def ordenar_nombre():
+    if not mascotas:
+        print("No hay registros para ordenar.")
+        return
+
     n = len(nombres)
-    for i in range(n):
+    for i in range(n - 1):
         for j in range(n - 1 - i):
-            if nombres[j] > nombres[j+1]:
-                nombres[j], nombres[j+1] = nombres[j+1], nombres[j]
-                especies[j], especies[j+1] = especies[j+1], especies[j]
-                duenos[j], duenos[j+1] = duenos[j+1], duenos[j]
-                mascotas[j], mascotas[j+1] = mascotas[j+1], mascotas[j]
-    print("Ordenado por (nombre): ")
+            if nombres[j] > nombres[j + 1]:
+                intercambiar_registros(j, j + 1)
+
+    print("\n-> Lista ordenada alfabéticamente por Nombre: ")
     mostrar()
 
 def ordenar_especie():
+    if not mascotas:
+        print("No hay registros para ordenar.")
+        return
+
     n = len(especies)
-    for i in range(n):
+    for i in range(n - 1):
         min_id = i
-        for j in range(i+1, n):
+        for j in range(i + 1, n):
             if especies[j] < especies[min_id]:
                 min_id = j
-        nombres[i], nombres[min_id] = nombres[min_id], nombres[i]
-        especies[i], especies[min_id] = especies[min_id], especies[i]
-        duenos[i], duenos[min_id] = duenos[min_id], duenos[i]
-        mascotas[i], mascotas[min_id] = mascotas[min_id], mascotas[i]
-    print("Ordenado por (especie): ")
+        if min_id != i:
+            intercambiar_registros(i, min_id)
+
+    print("\n-> Lista ordenada alfabéticamente por Especie: ")
     mostrar()
 
 def main():
     opcion = ""
-    while opcion!= "8": 
+    while opcion != "8":
         mostrar_menu()
-        opcion = input("Elige: ")
+        opcion = input("Elige una opción (1-8): ").strip()
 
         if opcion == "1":
             registrar()
@@ -153,8 +257,9 @@ def main():
         elif opcion == "7":
             ordenar_especie()
         elif opcion == "8":
-            print("Saliendo...")
+            print("Saliendo del sistema veterinario...")
         else:
-            print("Opción inválida")
+            print("Opción inválida. Intenta nuevamente.")
 
-main()
+if __name__ == "__main__":
+    main()
