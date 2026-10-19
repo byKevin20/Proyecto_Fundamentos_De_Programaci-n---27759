@@ -69,7 +69,7 @@ def registrar():
         print(f"\n--- Mascota {i + 1} de {cantidad} ---")
         nombre = limpiar_texto(input("Nombre de la mascota: "))
         especie = limpiar_texto(input("Especie (ej. Perro, Gato): "))
-        dueno = limpiar_texto(input("Nombre y apellido del dueño: "))
+        dueno = limpiar_texto(input("Nombres y apellidos del dueño: "))
 
         if nombre == "" or especie == "" or dueno == "":
             print("Error: Nombre, especie y dueño son obligatorios. Registro omitido.")
@@ -94,7 +94,7 @@ def registrar():
             })
 
             print(f"-> Registrado N° {num_historico} (Código: {codigo}) | "
-                  f"Primer nombre del dueño (split): {primer_nombre_dueno} | "
+                  f"Primer nombre del dueño: {primer_nombre_dueno} | "
                   f"Total activas: {contador_total}")
 
 def mostrar():
